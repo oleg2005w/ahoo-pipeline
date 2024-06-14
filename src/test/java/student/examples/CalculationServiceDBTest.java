@@ -1,14 +1,12 @@
 package student.examples;
 
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.testng.annotations.*;
 
 import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
+@Listeners(CalculationServiceTestListener.class)
 
 public class CalculationServiceDBTest {
     private Connection connection;
@@ -57,7 +55,8 @@ public class CalculationServiceDBTest {
     @DataProvider(name = "dp")
     public Iterator<Map<String, Object>> provideData() throws SQLException {
         Statement statement = connection.createStatement();
-        ResultSet resultSet = statement.executeQuery("SELECT * FROM test_data ORDER BY (id)");
+        ResultSet resultSet = statement.executeQuery("SELECT input,expected,email FROM test_data JOIN tests ON test_data.test_id = tests.id " +
+                "JOIN test_authors ON tests.email_id = test_authors.id ORDER BY (test_data.id)");
         List<Map<String, Object>> testData = new ArrayList<>();
         while (resultSet.next()){
             Map<String, Object> sample = new HashMap<>();
@@ -65,6 +64,7 @@ public class CalculationServiceDBTest {
                     .map(Integer::parseInt)
                     .collect(Collectors.toList()));
             sample.put("expected", resultSet.getInt("expected"));
+            sample.put("email", resultSet.getString("email"));
             testData.add(sample);
         }
         System.out.println(testData);
@@ -75,7 +75,9 @@ public class CalculationServiceDBTest {
     public void testSumOfIntegers(Map<String, Object> sample){
         System.out.println("Test:::");
 
-        Assert.assertEquals(calculationService.summ(new ArrayList<>(Arrays.asList(1, 2, 3, 4))), 10);
+//        Assert.assertEquals(calculationService.summ(new ArrayList<>(Arrays.asList(1, 2, 3, 4))), 10);
+        List<Integer> dates = (List<Integer>) sample.get("input");
+        Assert.assertEquals(calculationService.summ(dates), sample.get("expected"));
     }
     @AfterClass
     //TODO: CLear table from database
